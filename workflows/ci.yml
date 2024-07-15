@@ -1,0 +1,82 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - master
+      - travis
+  pull_request:
+    branches:
+      - master
+      - travis
+
+jobs:
+  build:
+    name: Build and Test
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+        compiler: [gcc-4.9, gcc-5, gcc-6, clang-3.8, clang-3.9, clang-4.0, clang-5.0]
+        exclude:
+          - os: macos-latest
+            compiler: gcc-4.9
+          - os: macos-latest
+            compiler: gcc-5
+          - os: macos-latest
+            compiler: gcc-6
+          - os: macos-latest
+            compiler: clang-3.8
+          - os: macos-latest
+            compiler: clang-3.9
+          - os: macos-latest
+            compiler: clang-4.0
+          - os: macos-latest
+            compiler: clang-5.0
+
+    env:
+      DEPS_DIR: ${{ github.workspace }}/deps
+      CMAKE_VERSION: "3.8"
+      CMAKE_VERSION_FULL: "3.8.2"
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v2
+
+    - name: Set up environment
+      run: |
+        if [[ "${{ matrix.os }}" == "ubuntu-latest" ]]; then
+          sudo apt-get update
+          sudo apt-get install -y g++-4.9 g++-5 g++-6 clang-3.8 clang-3.9 clang-4.0 clang-5.0 libc++-dev libc++abi-dev xorg-dev libjpeg-dev libturbojpeg libpng12-dev libgl1-mesa-dev libfreetype6-dev fontconfig libsdl2-dev libicu-dev libegl1-mesa-dev
+          if [[ ! -f "${{ env.DEPS_DIR }}/cmake-${{ env.CMAKE_VERSION_FULL }}-Linux-x86_64/bin/cmake" ]]; then
+            CMAKE_URL="http://www.cmake.org/files/v${{ env.CMAKE_VERSION }}/cmake-${{ env.CMAKE_VERSION_FULL }}-Linux-x86_64.tar.gz"
+            mkdir -p ${{ env.DEPS_DIR }}/cmake
+            wget --no-check-certificate --quiet -O - ${CMAKE_URL} | tar --strip-components=1 -xz -C ${{ env.DEPS_DIR }}/cmake
+          fi
+          export PATH=${{ env.DEPS_DIR }}/cmake/bin:${{ github.workspace }}/extlib/external/skia/third_party/externals:${PATH}
+        elif [[ "${{ matrix.os }}" == "macos-latest" ]]; then
+          brew update
+          brew install ccache jpeg-turbo freetype sdl2
+        fi
+
+    - name: Set up compiler
+      run: |
+        if [[ "${{ matrix.compiler }}" == gcc* ]]; then
+          sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/${{ matrix.compiler }} 60
+          sudo update-alternatives --install /usr/bin/g++ g++ /usr/bin/${{ matrix.compiler }} 60
+        elif [[ "${{ matrix.compiler }}" == clang* ]]; then
+          sudo update-alternatives --install /usr/bin/clang clang /usr/bin/${{ matrix.compiler }} 60
+          sudo update-alternatives --install /usr/bin/clang++ clang++ /usr/bin/${{ matrix.compiler }} 60
+        fi
+
+    - name: Update submodules
+      run: git submodule update --init --recursive
+
+    - name: Build
+      run: |
+        mkdir build
+        cd build
+        cmake .. && ccache make
+
+    - name: Run tests
+      run: ./build/tests/psychic-ui-tests
