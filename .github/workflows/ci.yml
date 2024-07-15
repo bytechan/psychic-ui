@@ -16,23 +16,8 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [ubuntu-latest, macos-latest]
-        compiler: [gcc-4.9, gcc-5, gcc-6, clang-3.8, clang-3.9, clang-4.0, clang-5.0]
-        exclude:
-          - os: macos-latest
-            compiler: gcc-4.9
-          - os: macos-latest
-            compiler: gcc-5
-          - os: macos-latest
-            compiler: gcc-6
-          - os: macos-latest
-            compiler: clang-3.8
-          - os: macos-latest
-            compiler: clang-3.9
-          - os: macos-latest
-            compiler: clang-4.0
-          - os: macos-latest
-            compiler: clang-5.0
+        os: [ubuntu-latest,]
+        compiler: [clang-5.0]
 
     env:
       DEPS_DIR: ${{ github.workspace }}/deps
@@ -45,19 +30,14 @@ jobs:
 
     - name: Set up environment
       run: |
-        if [[ "${{ matrix.os }}" == "ubuntu-latest" ]]; then
-          sudo apt-get update
-          sudo apt-get install -y g++-4.9 g++-5 g++-6 clang-3.8 clang-3.9 clang-4.0 clang-5.0 libc++-dev libc++abi-dev xorg-dev libjpeg-dev libturbojpeg libpng12-dev libgl1-mesa-dev libfreetype6-dev fontconfig libsdl2-dev libicu-dev libegl1-mesa-dev
-          if [[ ! -f "${{ env.DEPS_DIR }}/cmake-${{ env.CMAKE_VERSION_FULL }}-Linux-x86_64/bin/cmake" ]]; then
-            CMAKE_URL="http://www.cmake.org/files/v${{ env.CMAKE_VERSION }}/cmake-${{ env.CMAKE_VERSION_FULL }}-Linux-x86_64.tar.gz"
-            mkdir -p ${{ env.DEPS_DIR }}/cmake
-            wget --no-check-certificate --quiet -O - ${CMAKE_URL} | tar --strip-components=1 -xz -C ${{ env.DEPS_DIR }}/cmake
-          fi
-          export PATH=${{ env.DEPS_DIR }}/cmake/bin:${{ github.workspace }}/extlib/external/skia/third_party/externals:${PATH}
-        elif [[ "${{ matrix.os }}" == "macos-latest" ]]; then
-          brew update
-          brew install ccache jpeg-turbo freetype sdl2
+        sudo apt-get update
+        sudo apt-get install -y clang-5.0 libc++-dev libc++abi-dev xorg-dev libjpeg-dev libturbojpeg libpng12-dev libgl1-mesa-dev libfreetype6-dev fontconfig libsdl2-dev libicu-dev libegl1-mesa-dev
+        if [[ ! -f "${{ env.DEPS_DIR }}/cmake-${{ env.CMAKE_VERSION_FULL }}-Linux-x86_64/bin/cmake" ]]; then
+          CMAKE_URL="http://www.cmake.org/files/v${{ env.CMAKE_VERSION }}/cmake-${{ env.CMAKE_VERSION_FULL }}-Linux-x86_64.tar.gz"
+          mkdir -p ${{ env.DEPS_DIR }}/cmake
+          wget --no-check-certificate --quiet -O - ${CMAKE_URL} | tar --strip-components=1 -xz -C ${{ env.DEPS_DIR }}/cmake
         fi
+        export PATH=${{ env.DEPS_DIR }}/cmake/bin:${{ github.workspace }}/extlib/external/skia/third_party/externals:${PATH}
 
     - name: Set up compiler
       run: |
