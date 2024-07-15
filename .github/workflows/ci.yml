@@ -11,13 +11,13 @@ on:
       - travis
 
 jobs:
-  build:
-    name: Build and Test
-    runs-on: ${{ matrix.os }}
+  linux:
+    runs-on: ubuntu-latest
+    container: ubuntu:18.04
     strategy:
       matrix:
-        os: [ubuntu-14.04]
-        compiler: [clang-5.0]
+        build_type: [Release]
+      fail-fast: false
 
     env:
       DEPS_DIR: ${{ github.workspace }}/deps
